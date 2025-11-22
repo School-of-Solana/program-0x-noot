@@ -1,14 +1,38 @@
-/* ===== Root layout ===== */
+/* ===== Page & root layout ===== */
 
-.app {
-  padding: 40px 20px;
-  color: #e2e8f0;
-  font-family: Inter, sans-serif;
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: radial-gradient(circle at top, #1c1f2b, #0d1117);
-  min-height: 100vh;
+  color: #e2e8f0;
 }
 
-h1, h2, h3, h4, h5 {
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 16px;
+}
+
+/* ===== App container ===== */
+
+.app {
+  padding: 24px 24px 32px;
+  color: #e2e8f0;
+  background: radial-gradient(circle at top left, #141826, #05070d);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  max-width: 1100px;
+  width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
   margin: 0;
   padding: 0;
 }
@@ -19,7 +43,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
 }
 
 .game-title {
@@ -76,13 +100,21 @@ h1, h2, h3, h4, h5 {
   width: 70px;
   height: 70px;
   border-radius: 24px;
-  background: linear-gradient(160deg, #2d3748, #1a202c);
+  background: radial-gradient(circle at 30% 10%, #4b5563, #1f2933);
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 2.2rem;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(148, 163, 184, 0.3);
+
+  position: relative; /* needed for FX overlay */
+  overflow: visible;
+}
+
+.miner-avatar-inner {
+  position: relative;
+  z-index: 1;
 }
 
 .miner-avatar.ghost {
@@ -104,6 +136,82 @@ h1, h2, h3, h4, h5 {
   font-size: 1.5rem;
 }
 
+/* ===== Miner SVG (animated) ===== */
+
+.miner-svg {
+  width: 46px;
+  height: 46px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: miner-bob 1.8s ease-in-out infinite;
+}
+
+/* Helmet: bright accent */
+.miner-svg-helmet rect,
+.miner-svg-helmet circle {
+  fill: #f59e0b;
+  stroke: #fbbf24;
+  stroke-width: 1.2;
+}
+
+/* Face */
+.miner-svg-face rect {
+  fill: #facc91;
+  stroke: #fbbf77;
+  stroke-width: 1;
+}
+
+.miner-svg-face circle {
+  fill: #1f2933;
+}
+
+.miner-svg-face rect:nth-of-type(2) {
+  fill: #1f2933;
+}
+
+/* Body */
+.miner-svg-body rect {
+  fill: #0f172a;
+  stroke: #1e293b;
+  stroke-width: 1.1;
+}
+
+/* Pickaxe */
+.miner-svg-pickaxe rect {
+  fill: #e5e7eb;
+  stroke: #9ca3af;
+  stroke-width: 1.1;
+  transform-origin: 44px 12px;
+  animation: miner-swing 1.3s ease-in-out infinite;
+}
+
+/* Bobbing animation for the miner */
+@keyframes miner-bob {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Swing animation for the pickaxe */
+@keyframes miner-swing {
+  0% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+  100% {
+    transform: rotate(-6deg);
+  }
+}
+
 /* ===== Stats ===== */
 
 .miner-stats {
@@ -114,7 +222,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .stat-label {
@@ -141,7 +249,7 @@ h1, h2, h3, h4, h5 {
 .progress-bar {
   width: 100%;
   height: 10px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -176,8 +284,8 @@ h1, h2, h3, h4, h5 {
   margin-top: 20px;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(148,163,184,0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   font-size: 0.85rem;
 }
 
@@ -234,13 +342,13 @@ h1, h2, h3, h4, h5 {
 }
 
 .btn.ghost {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn.ghost:hover {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ===== Action Card ===== */
@@ -249,8 +357,8 @@ h1, h2, h3, h4, h5 {
   background: linear-gradient(135deg, #1a1f2e, #12151d);
   border-radius: 16px;
   padding: 18px;
-  border: 1px solid rgba(148,163,184,0.25);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
 }
 
 .actions-grid {
@@ -274,8 +382,8 @@ h1, h2, h3, h4, h5 {
   gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(15,23,42,0.9);
-  border: 1px solid rgba(148,163,184,0.4);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
   font-size: 0.85rem;
 }
 
@@ -305,7 +413,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .config-list span {
@@ -328,11 +436,14 @@ h1, h2, h3, h4, h5 {
   opacity: 0.9;
 }
 
-/* ===== Animations & FX ===== */
+/* ===== Animations & FX (now anchored to avatar) ===== */
 
 .fx {
   position: absolute;
-  inset: 0;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -345,12 +456,18 @@ h1, h2, h3, h4, h5 {
   animation: sparkle-pop 0.9s ease-out forwards;
 }
 
-.fx-upgrade .sparkles span:nth-child(1) { animation-delay: 0s; }
-.fx-upgrade .sparkles span:nth-child(2) { animation-delay: 0.1s; }
-.fx-upgrade .sparkles span:nth-child(3) { animation-delay: 0.2s; }
+.fx-upgrade .sparkles span:nth-child(1) {
+  animation-delay: 0s;
+}
+.fx-upgrade .sparkles span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.fx-upgrade .sparkles span:nth-child(3) {
+  animation-delay: 0.2s;
+}
 
 .fx-reward .burst {
-  font-size: 2.4rem;
+  font-size: 2.1rem;
   animation: burst-pop 1s ease-out forwards;
 }
 

@@ -10,8 +10,8 @@ import {
 } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
+
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { RPC_ENDPOINT } from "./config";
 
@@ -25,18 +25,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <div className="app-root">
-            <header
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "1rem",
-                borderBottom: "1px solid #eee",
-              }}
-            >
-              <h1>Idle Miner</h1>
-              <WalletMultiButton />
-            </header>
+            {/* Removed header */}
             <App />
           </div>
         </WalletModalProvider>

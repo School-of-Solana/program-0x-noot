@@ -44,6 +44,23 @@ function derivePlayerPda(authority: PublicKey): PublicKey {
   return pda;
 }
 
+// --- Short number formatter (1.2K, 3.4M, etc.) ---
+function formatNumberShort(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  const abs = Math.abs(value);
+
+  if (abs >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+  }
+  if (abs >= 1_000_000) {
+    return (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (abs >= 1_000) {
+    return (value / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  }
+  return value.toString();
+}
+
 // --- Player account TypeScript shape ---
 type PlayerInfo = {
   score: number;
@@ -141,7 +158,45 @@ function decodeGameConfigAccount(data: Buffer): GameConfigInfo {
   };
 }
 
-const MAX_BATCH = 20;
+// Allow bigger multi-claim / multi-upgrade batches
+const MAX_BATCH = 50;
+
+// --- Simple animated SVG miner avatar ---
+const MinerSvg: React.FC = () => (
+  <svg
+    className="miner-svg"
+    viewBox="0 0 64 64"
+    aria-hidden="true"
+    role="img"
+  >
+    {/* Helmet */}
+    <g className="miner-svg-helmet">
+      <rect x="16" y="14" width="32" height="12" rx="6" />
+      <circle cx="32" cy="20" r="6" />
+    </g>
+
+    {/* Face */}
+    <g className="miner-svg-face">
+      <rect x="20" y="24" width="24" height="18" rx="8" />
+      <circle cx="26" cy="30" r="2" />
+      <circle cx="38" cy="30" r="2" />
+      <rect x="28" y="34" width="8" height="2" rx="1" />
+    </g>
+
+    {/* Body */}
+    <g className="miner-svg-body">
+      <rect x="22" y="40" width="20" height="14" rx="6" />
+      <rect x="22" y="54" width="6" height="6" rx="2" />
+      <rect x="36" y="54" width="6" height="6" rx="2" />
+    </g>
+
+    {/* Pickaxe */}
+    <g className="miner-svg-pickaxe">
+      <rect x="44" y="12" width="4" height="26" rx="2" />
+      <rect x="40" y="10" width="12" height="4" rx="2" />
+    </g>
+  </svg>
+);
 
 const App: React.FC = () => {
   const { connection, wallet } = useIdleMinerProgram();
@@ -204,7 +259,7 @@ const App: React.FC = () => {
       if (!accInfo) {
         setPlayerInfo(null);
         setStatus(
-          "No player account found on-chain. Click 'Create miner' first."
+          "No miner found on-chain. Click 'Create miner' to start mining."
         );
         return;
       }
@@ -215,7 +270,9 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error("refreshPlayer error", err);
       setStatus(
-        `Failed to fetch player account: ${err?.message ?? JSON.stringify(err)}`
+        `Failed to fetch player account: ${err?.message ?? JSON.stringify(
+          err
+        )}`
       );
     } finally {
       setLoadingPlayer(false);
@@ -401,7 +458,7 @@ const App: React.FC = () => {
       await connection.confirmTransaction(sig, "confirmed");
       setStatus(`Claim reward x${times} confirmed ✅\nSignature: ${sig}`);
 
-      // Little fireworks effect
+      // Fireworks effect anchored to the avatar
       setShowRewardFx(true);
       setTimeout(() => setShowRewardFx(false), 1200);
 
@@ -426,7 +483,14 @@ const App: React.FC = () => {
         );
       }
     }
-  }, [connection, wallet, ensureRewardAta, refreshPlayer, playerInfo, claimCount]);
+  }, [
+    connection,
+    wallet,
+    ensureRewardAta,
+    refreshPlayer,
+    playerInfo,
+    claimCount,
+  ]);
 
   // --- upgrade_miner instruction (with batching) ---
   const handleUpgradeMiner = useCallback(async () => {
@@ -479,7 +543,7 @@ const App: React.FC = () => {
       await connection.confirmTransaction(sig, "confirmed");
       setStatus(`Upgrade miner x${times} confirmed ✅\nSignature: ${sig}`);
 
-      // Sparkle effect
+      // Sparkle effect anchored to the avatar
       setShowUpgradeFx(true);
       setTimeout(() => setShowUpgradeFx(false), 1200);
 
@@ -540,232 +604,247 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="app">
-      <header className="game-header">
-        <div>
-          <h1 className="game-title">⛏️ Idle Miner</h1>
-          <p className="game-subtitle">
-            Mine points over time, upgrade your rig, and claim token rewards.
+    <div className="app-root">
+      <div className="app">
+        <header className="game-header">
+          <div>
+            <h1 className="game-title">⛏️ Idle Miner</h1>
+            <p className="game-subtitle">
+              Mine points over time, upgrade your rig, and claim token rewards.
+            </p>
+          </div>
+          <WalletMultiButton />
+        </header>
+
+        {!wallet.connected ? (
+          <p className="info center">
+            Connect your wallet to spawn your first miner.
           </p>
-        </div>
-        <WalletMultiButton />
-      </header>
+        ) : (
+          <main className="game-main">
+            {/* Left side: Miner card / status */}
+            <section className="miner-section">
+              <div className="miner-card">
+                {playerInfo ? (
+                  <>
+                    <div className="miner-avatar-wrapper">
+                      <div className="miner-avatar">
+                        <div className="miner-avatar-inner">
+                          <MinerSvg />
+                        </div>
 
-      {!wallet.connected ? (
-        <p className="info center">
-          Connect your wallet to spawn your first miner.
-        </p>
-      ) : (
-        <main className="game-main">
-          {/* Left side: Miner card / status */}
-          <section className="miner-section">
-            <div className="miner-card">
-              {playerInfo ? (
-                <>
-                  <div className="miner-avatar-wrapper">
-                    <div className="miner-avatar">
-                      <span className="miner-emoji">👷‍♂️</span>
-                    </div>
-                    <div className="miner-level">
-                      <span>Level</span>
-                      <strong>{level}</strong>
-                    </div>
-                  </div>
+                        {showUpgradeFx && (
+                          <div className="fx fx-upgrade">
+                            <div className="sparkles">
+                              <span>✨</span>
+                              <span>✨</span>
+                              <span>✨</span>
+                            </div>
+                          </div>
+                        )}
+                        {showRewardFx && (
+                          <div className="fx fx-reward">
+                            <div className="burst">🎆</div>
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="miner-stats">
-                    <div className="stat-row">
-                      <span className="stat-label">Score</span>
-                      <span className="stat-value">{playerInfo.score}</span>
+                      <div className="miner-level">
+                        <span>Level</span>
+                        <strong>{level}</strong>
+                      </div>
                     </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Mining rate</span>
-                      <span className="stat-value">
-                        {playerInfo.miningRate} pts / interval
-                      </span>
-                    </div>
-                    {gameConfig && (
+
+                    <div className="miner-stats">
                       <div className="stat-row">
-                        <span className="stat-label">Milestone score</span>
+                        <span className="stat-label">Score</span>
                         <span className="stat-value">
-                          {gameConfig.milestoneScore}
+                          {formatNumberShort(playerInfo.score)}
                         </span>
                       </div>
+                      <div className="stat-row">
+                        <span className="stat-label">Mining rate</span>
+                        <span className="stat-value">
+                          {formatNumberShort(playerInfo.miningRate)} pts /
+                          interval
+                        </span>
+                      </div>
+                      {gameConfig && (
+                        <div className="stat-row">
+                          <span className="stat-label">Milestone score</span>
+                          <span className="stat-value">
+                            {formatNumberShort(gameConfig.milestoneScore)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {milestoneScore && (
+                      <div className="progress-wrapper">
+                        <div className="progress-label">
+                          Progress to next reward
+                        </div>
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${progressToNext * 100}%` }}
+                          />
+                        </div>
+                        <div className="progress-meta">
+                          {missingForNext !== null &&
+                            `${formatNumberShort(
+                              missingForNext
+                            )} pts until next claim`}
+                        </div>
+                      </div>
                     )}
+                  </>
+                ) : (
+                  <div className="miner-empty">
+                    <div className="miner-avatar ghost">
+                      <span className="miner-emoji">💤</span>
+                    </div>
+                    <p>No miner yet.</p>
+                    <p className="hint">
+                      Click <strong>Create miner</strong> to start mining.
+                    </p>
                   </div>
-
-                  {milestoneScore && (
-                    <div className="progress-wrapper">
-                      <div className="progress-label">
-                        Progress to next reward
-                      </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${progressToNext * 100}%` }}
-                        />
-                      </div>
-                      <div className="progress-meta">
-                        {missingForNext !== null &&
-                          `${missingForNext} pts until next claim`}
-                      </div>
-                    </div>
-                  )}
-
-                  {showUpgradeFx && (
-                    <div className="fx fx-upgrade">
-                      <div className="sparkles">
-                        <span>✨</span>
-                        <span>✨</span>
-                        <span>✨</span>
-                      </div>
-                    </div>
-                  )}
-                  {showRewardFx && (
-                    <div className="fx fx-reward">
-                      <div className="burst">🎆</div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="miner-empty">
-                  <div className="miner-avatar ghost">
-                    <span className="miner-emoji">💤</span>
-                  </div>
-                  <p>No miner yet.</p>
-                  <p className="hint">
-                    Click <strong>Create miner</strong> to start mining.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="wallet-info">
-              <div>
-                <span className="label">Wallet</span>
-                <code className="value">
-                  {wallet.publicKey?.toBase58().slice(0, 4)}...
-                  {wallet.publicKey?.toBase58().slice(-4)}
-                </code>
-              </div>
-              <div>
-                <span className="label">Player PDA</span>
-                <code className="value">
-                  {playerPda
-                    ? playerPda.toBase58().slice(0, 6) +
-                      "..." +
-                      playerPda.toBase58().slice(-4)
-                    : "—"}
-                </code>
-              </div>
-            </div>
-          </section>
-
-          {/* Right side: actions + config */}
-          <section className="actions-section">
-            <div className="card">
-              <h2>Actions</h2>
-              <div className="actions-grid">
-                {!playerInfo && (
-                  <button
-                    className="btn primary"
-                    onClick={handleCreatePlayer}
-                    disabled={!wallet.connected}
-                  >
-                    Create miner
-                  </button>
                 )}
-
-                <button
-                  className="btn success"
-                  onClick={handleClaimReward}
-                  disabled={!wallet.connected || !playerInfo || creatingAta}
-                >
-                  Claim reward x{claimCount}
-                </button>
-
-                <button
-                  className="btn warning"
-                  onClick={handleUpgradeMiner}
-                  disabled={!wallet.connected || !playerInfo}
-                >
-                  Upgrade miner x{upgradeCount}
-                </button>
-
-                <button
-                  className="btn ghost full"
-                  onClick={refreshAll}
-                  disabled={loadingPlayer || loadingConfig}
-                >
-                  {loadingPlayer || loadingConfig
-                    ? "Refreshing..."
-                    : "Refresh from chain"}
-                </button>
               </div>
 
-              <div className="count-row">
-                <label>
-                  Claim times
-                  <input
-                    type="number"
-                    min={1}
-                    max={MAX_BATCH}
-                    value={claimCount}
-                    onChange={handleClaimCountChange}
-                  />
-                </label>
-                <label>
-                  Upgrade times
-                  <input
-                    type="number"
-                    min={1}
-                    max={MAX_BATCH}
-                    value={upgradeCount}
-                    onChange={handleUpgradeCountChange}
-                  />
-                </label>
+              <div className="wallet-info">
+                <div>
+                  <span className="label">Wallet</span>
+                  <code className="value">
+                    {wallet.publicKey?.toBase58().slice(0, 4)}...
+                    {wallet.publicKey?.toBase58().slice(-4)}
+                  </code>
+                </div>
+                <div>
+                  <span className="label">Player PDA</span>
+                  <code className="value">
+                    {playerPda
+                      ? playerPda.toBase58().slice(0, 6) +
+                        "..." +
+                        playerPda.toBase58().slice(-4)
+                      : "—"}
+                  </code>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div className="card config-card">
-              <h2>Game config</h2>
-              {gameConfig ? (
-                <ul className="config-list">
-                  <li>
-                    <span>Entry fee</span>
-                    <code>
-                      {entryFeeSol !== null ? `${entryFeeSol} SOL` : "—"}
-                    </code>
-                  </li>
-                  <li>
-                    <span>Base mining rate</span>
-                    <code>{gameConfig.baseRate} pts / interval</code>
-                  </li>
-                  <li>
-                    <span>Interval</span>
-                    <code>{gameConfig.intervalSeconds} seconds</code>
-                  </li>
-                  <li>
-                    <span>Milestone score</span>
-                    <code>{gameConfig.milestoneScore}</code>
-                  </li>
-                </ul>
-              ) : (
-                <p className="hint">
-                  Click <strong>Refresh from chain</strong> to load the current
-                  config.
-                </p>
-              )}
-            </div>
+            {/* Right side: actions + config */}
+            <section className="actions-section">
+              <div className="card">
+                <h2>Actions</h2>
+                <div className="actions-grid">
+                  {!playerInfo && (
+                    <button
+                      className="btn primary"
+                      onClick={handleCreatePlayer}
+                      disabled={!wallet.connected}
+                    >
+                      Create miner
+                    </button>
+                  )}
+
+                  <button
+                    className="btn success"
+                    onClick={handleClaimReward}
+                    disabled={!wallet.connected || !playerInfo || creatingAta}
+                  >
+                    Claim reward x{claimCount}
+                  </button>
+
+                  <button
+                    className="btn warning"
+                    onClick={handleUpgradeMiner}
+                    disabled={!wallet.connected || !playerInfo}
+                  >
+                    Upgrade miner x{upgradeCount}
+                  </button>
+
+                  <button
+                    className="btn ghost full"
+                    onClick={refreshAll}
+                    disabled={loadingPlayer || loadingConfig}
+                  >
+                    {loadingPlayer || loadingConfig
+                      ? "Refreshing..."
+                      : "Refresh from chain"}
+                  </button>
+                </div>
+
+                <div className="count-row">
+                  <label>
+                    Claim times
+                    <input
+                      type="number"
+                      min={1}
+                      max={MAX_BATCH}
+                      value={claimCount}
+                      onChange={handleClaimCountChange}
+                    />
+                  </label>
+                  <label>
+                    Upgrade times
+                    <input
+                      type="number"
+                      min={1}
+                      max={MAX_BATCH}
+                      value={upgradeCount}
+                      onChange={handleUpgradeCountChange}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="card config-card">
+                <h2>Game config</h2>
+                {gameConfig ? (
+                  <ul className="config-list">
+                    <li>
+                      <span>Entry fee</span>
+                      <code>
+                        {/* You can hard-code "1 SOL" if you prefer */}
+                        {entryFeeSol !== null ? `${entryFeeSol} SOL` : "—"}
+                      </code>
+                    </li>
+                    <li>
+                      <span>Base mining rate</span>
+                      <code>
+                        {formatNumberShort(gameConfig.baseRate)} pts / interval
+                      </code>
+                    </li>
+                    <li>
+                      <span>Interval</span>
+                      <code>{gameConfig.intervalSeconds} seconds</code>
+                    </li>
+                    <li>
+                      <span>Milestone score</span>
+                      <code>
+                        {formatNumberShort(gameConfig.milestoneScore)}
+                      </code>
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="hint">
+                    Click <strong>Refresh from chain</strong> to load the
+                    current config.
+                  </p>
+                )}
+              </div>
+            </section>
+          </main>
+        )}
+
+        {status && (
+          <section className="status-panel">
+            <h3>Activity</h3>
+            <pre>{status}</pre>
           </section>
-        </main>
-      )}
-
-      {status && (
-        <section className="status-panel">
-          <h3>Activity</h3>
-          <pre>{status}</pre>
-        </section>
-      )}
+        )}
+      </div>
     </div>
   );
 };
