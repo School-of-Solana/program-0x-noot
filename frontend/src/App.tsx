@@ -22,7 +22,7 @@ import {
 } from "./config";
 import { useIdleMinerProgram } from "./useIdleMinerProgram";
 
-// --- Instruction discriminators from your IDL ---
+
 const CREATE_PLAYER_DISCRIMINATOR = Buffer.from([
   19, 178, 189, 216, 159, 134, 0, 192,
 ]);
@@ -35,7 +35,7 @@ const UPGRADE_MINER_DISCRIMINATOR = Buffer.from([
   93, 174, 185, 203, 165, 148, 94, 13,
 ]);
 
-// --- PDA helper (same seeds as on-chain: b"player", authority) ---
+
 function derivePlayerPda(authority: PublicKey): PublicKey {
   const [pda] = PublicKey.findProgramAddressSync(
     [Buffer.from("player"), authority.toBuffer()],
@@ -806,7 +806,7 @@ const App: React.FC = () => {
                     <li>
                       <span>Entry fee</span>
                       <code>
-                        {/* You can hard-code "1 SOL" if you prefer */}
+                        {/*hard-code "1 SOL"*/}
                         {entryFeeSol !== null ? `${entryFeeSol} SOL` : "—"}
                       </code>
                     </li>
